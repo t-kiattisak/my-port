@@ -40,12 +40,17 @@ jobs:
           token: ${{ secrets.GITOPS_PAT }}
           path: argo-gitops
 
-      # Step 5: Update the Docker image tag in the GitOps repository
-      - name: Update Image Tag in GitOps Manifest
+      # Step 5: Update the Docker image tag and annotations in the GitOps repository
+      - name: Update Image Tag and Annotations in GitOps Manifest
         run: |
           cd argo-gitops
-          # Update only the tag portion using regex, keeping trailing comments
-          sed -i 's|image: tkiattisakj9/my-port-api:[^ ]*|image: tkiattisakj9/my-port-api:${{ github.sha }}|g' apps/base/my-api/deployment.yaml
+          # Update the Docker image tag using yq (cleaner and safer than sed)
+          yq -i '.spec.template.spec.containers[0].image = "tkiattisakj9/my-port-api:${{ github.sha }}"' apps/base/my-api/deployment.yaml
+          
+          # Inject metadata annotations for Git traceability
+          yq -i '.metadata.annotations."git/commit-sha" = "${{ github.sha }}"' apps/base/my-api/deployment.yaml
+          yq -i '.metadata.annotations."git/author" = "${{ github.actor }}"' apps/base/my-api/deployment.yaml
+          yq -i '.metadata.annotations."git/build-url" = "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"' apps/base/my-api/deployment.yaml
 
       # Step 6: Commit and Push changes back to the GitOps repository
       - name: Commit and Push Changes to GitOps
