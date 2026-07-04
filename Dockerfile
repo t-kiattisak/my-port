@@ -24,7 +24,6 @@ COPY package*.json ./
 # Install only production dependencies
 RUN npm install --omit=dev
 
-# Copy built code from builder
 COPY --from=builder /usr/src/app/dist ./dist
 
 ENV PORT=3000
