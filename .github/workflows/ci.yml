@@ -1,0 +1,58 @@
+name: CI/CD GitOps Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the API source code
+      - name: Checkout API Repo
+        uses: actions/checkout@v4
+
+      # Step 2: Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Step 3: Build and Push Docker image
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            tkiattisakj9/my-port-api:${{ github.sha }}
+            tkiattisakj9/my-port-api:latest
+
+      # Step 4: Checkout the GitOps Config repository (t-kiattisak/argo)
+      - name: Checkout GitOps Repo
+        uses: actions/checkout@v4
+        with:
+          repository: t-kiattisak/argo
+          token: ${{ secrets.GITOPS_PAT }}
+          path: argo-gitops
+
+      # Step 5: Update the Docker image tag in the GitOps repository
+      - name: Update Image Tag in GitOps Manifest
+        run: |
+          cd argo-gitops
+          # Update only the tag portion using regex, keeping trailing comments
+          sed -i 's|image: tkiattisakj9/my-port-api:[^ ]*|image: tkiattisakj9/my-port-api:${{ github.sha }}|g' apps/base/my-api/deployment.yaml
+
+      # Step 6: Commit and Push changes back to the GitOps repository
+      - name: Commit and Push Changes to GitOps
+        run: |
+          cd argo-gitops
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/base/my-api/deployment.yaml
+          git diff-index --quiet HEAD || git commit -m "chore: update my-api image tag to ${{ github.sha }} [skip ci]"
+          git push origin main
