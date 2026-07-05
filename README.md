@@ -23,19 +23,20 @@ npm start
 
 ---
 
-## 🐳 Build Docker Image for Kubernetes / Argo CD
+You can build the Docker image and push it to a container registry (e.g., Docker Hub or GitHub Container Registry) for Argo CD to deploy.
 
-You can build the Docker image and push it to a container registry (e.g., Docker Hub or GitHub Container Registry) for Argo CD to deploy:
+> [!NOTE]
+> For this repository, the Docker Hub username is set as **`tkiattisakj9`**.
 
 ```bash
-# 1. Build the image
-docker build -t tkiattisakj9/my-port-api:1.0.0 .
+# 1. Build the image (replace <dockerhub-username> with tkiattisakj9)
+docker build -t <dockerhub-username>/my-port-api:1.0.0 .
 
 # 2. Run the container locally to verify it works
-docker run -p 3000:3000 tkiattisakj9/my-port-api:1.0.0
+docker run -p 3000:3000 <dockerhub-username>/my-port-api:1.0.0
 
 # 3. Push the image to the registry
-docker push tkiattisakj9/my-port-api:1.0.0
+docker push <dockerhub-username>/my-port-api:1.0.0
 ```
 
 ---
